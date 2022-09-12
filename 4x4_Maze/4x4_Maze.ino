@@ -49,59 +49,55 @@ void setup() {
   pinMode(echoL,INPUT);
   pinMode(trigF,OUTPUT);
   pinMode(echoF,INPUT);
-//  turnAround(180,75);
-//  moveDist(30,50);
-//  moveDist(30,50);
-//  setMotor(0,0,inAR,inBR,PWMR);
-//  setMotor(0,0,inAL,inBL,PWML);
 }
 
 void loop() {
   int wall = updateWalls();
   Serial.println(wall);
-//  int end_x = 3 , end_y = 3;
-//  int curr_x = 2, curr_y = 1;
-//  while((curr_x != end_x) && (curr_x != end_x) ){
-//    int min_x , min_y , minDist = 100, minDir , currDir = 1;
-//    int walls = updateWalls();
-//    if(walls & 1 != 0){
-//      int distance = calcDist(curr_x,curr_y+1);
-//      if(distance < minDist){
-//        min_x =  curr_x; min_y = curr_y+1;
-//        minDist = distance;
-//        minDir = 1;
-//        }
-//      }
-//    if(walls & 2 != 0){
-//      int distance = calcDist(curr_x,curr_y-1);
-//      if(distance < minDist){
-//        min_x =  curr_x; min_y = curr_y-1;
-//        minDist = distance;
-//        minDir = 2;
-//        }
-//      }
-//    if(walls & 4 != 0){
-//      int distance = calcDist(curr_x-1,curr_y);
-//      if(distance < minDist){
-//        min_x =  curr_x-1; min_y = curr_y;
-//        minDist = distance;
-//        minDir = 4;
-//        }
-//      }
-//    if(walls & 8 != 0){
-//      int distance = calcDist(curr_x+1,curr_y);
-//      if(distance < minDist){
-//        min_x =  curr_x+1; min_y = curr_y;
-//        minDist = distance;
-//        minDir = 8;
-//        }
-//      }
-//      
-//    }
+  int end_x = 3 , end_y = 4;
+  int curr_x = 2, curr_y = 1;
+  while((curr_x != end_x) && (curr_x != end_x) ){
+    int min_x , min_y , minDist = 100, minDir , currDir = 1;
+    int walls = updateWalls();
+    if(walls & 1 != 0){
+      int distance = calcDist(curr_x,curr_y+1);
+      if(distance < minDist){
+        min_x =  curr_x; min_y = curr_y+1;
+        minDist = distance;
+        minDir = 1;
+        }
+      }
+    if(walls & 2 != 0){
+      int distance = calcDist(curr_x,curr_y-1);
+      if(distance < minDist){
+        min_x =  curr_x; min_y = curr_y-1;
+        minDist = distance;
+        minDir = 2;
+        }
+      }
+    if(walls & 4 != 0){
+      int distance = calcDist(curr_x-1,curr_y);
+      if(distance < minDist){
+        min_x =  curr_x-1; min_y = curr_y;
+        minDist = distance;
+        minDir = 4;
+        }
+      }
+    if(walls & 8 != 0){
+      int distance = calcDist(curr_x+1,curr_y);
+      if(distance < minDist){
+        min_x =  curr_x+1; min_y = curr_y;
+        minDist = distance;
+        minDir = 8;
+        }
+      }
+      moveTo(minDir,currDir,100);
+      curr_x = min_x;  curr_y = min_y;
+      currDir = minDir;
+    }
 }
 
 void moveDist(int dist , int Speed){
-
   int ppr = 385;
   float tireCirc = 2 * 3.5 * 3.14;
   int currPosR ,currPosL;
@@ -149,10 +145,6 @@ void moveDist(int dist , int Speed){
         errorL =  errorR + 0.1 * errorR;
         errorR =  errorR - 0.1 * errorR;
         }
-//    if(errorL < 0) errorL = abs(errorL);
-//    if(errorR < 0) errorR = abs(errorR);
-//    if(rightDamp < 0) rightDamp = abs(rightDamp);
-//    if(leftDamp < 0) leftDamp = abs(leftDamp);
     int pwmR = rightDamp * errorR * Speed ;
     int pwmL = leftDamp * errorL * Speed ;
     if(pwmR > 150) pwmR = 150;
@@ -161,14 +153,6 @@ void moveDist(int dist , int Speed){
     else if(pwmL < 40) pwmL = 40;
     setMotor(dirR , pwmR , inAR , inBR , PWMR);
     setMotor(dirL , pwmL , inAL , inBL , PWML);
-    Serial.print(-targetR);
-    Serial.print(" ");
-    Serial.print(-currPosR);
-//    Serial.print(" ");
-//    Serial.print(targetL);
-//    Serial.print(" ");
-//    Serial.print(currPosL);
-    Serial.println();
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
       currPosR = posR;
       currPosL = posL;
@@ -216,12 +200,6 @@ void readEncoderL(){
 
 
 void turnAround(int degree , int Speed){
-//   setMotor(0,0,inAR,inBR,PWMR);
-//   setMotor(0,0,inAL,inBL,PWML);
-//    ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
-//        posR = 0;
-//        posL = 0;
-//      }
   int fullTurn = 920; int target;
   switch(degree){
     case 90 :
@@ -279,14 +257,6 @@ void turnAround(int degree , int Speed){
         }
       setMotor(dirR,pwmR,inAR,inBR,PWMR);
       setMotor(dirL,pwmL,inAL,inBL,PWML);
-      Serial.print(-targetR);
-      Serial.print(" ");
-      Serial.print(-posR);
-      Serial.print(" ");
-//      Serial.print(targetL);
-//      Serial.print(" ");
-//      Serial.print(posL);
-      Serial.println();
       ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
         currPosR = posR;
         currPosL = posL;

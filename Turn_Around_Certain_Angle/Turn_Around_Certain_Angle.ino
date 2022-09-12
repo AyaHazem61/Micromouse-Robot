@@ -32,12 +32,13 @@ void setup() {
   pinMode(inBL,OUTPUT);
   pinMode(PWML,OUTPUT);
   attachInterrupt(digitalPinToInterrupt(encAL),readEncoderL,RISING);
+  
   turnAround(180,100);
+  
 }
 
 void loop() {
-//    setMotor(1,50,inAR,inBR,PWMR);
-//    setMotor(1,50,inAL,inBL,PWML);
+  
 }
 
 
@@ -45,16 +46,16 @@ void turnAround(int degree , int Speed){
   int fullTurn = 920; int target;
   switch(degree){
     case 90 :
-      target = 0.18 * fullTurn;
+      target = 0.25 * fullTurn;
       break;
     case -90 :
-      target = -0.18 * fullTurn;
+      target = -0.25 * fullTurn;
       break;
     case 180 :
-      target = 0.44* fullTurn;
+      target = 0.52* fullTurn;
       break;
     case -180 :
-      target = -0.44 * fullTurn;
+      target = -0.52 * fullTurn;
       break;
     case 360 :
       target = fullTurn;
@@ -67,19 +68,7 @@ void turnAround(int degree , int Speed){
     currPosL = posL;
     }
   int targetR = target + currPosR , targetL = target + currPosL;
-  /*float kpL = 0.45 , kiL = 0.1, kdL = 0;*/
-  float kpR = 0.45, kiR = 0, kdR = 0;
-  long currT = micros();
-  float deltaT = float(currT - prevT)/1.0e6;
-  
-  int eL = targetL - currPosL , eR = currPosR - targetR;
-  int dedER = (eR- prevER) / deltaT /*, dedEL = (eL - prevEL) / deltaT */;
-  integralER = integralER + eR*deltaT;
-  /*integralEL = integralEL + eL*deltaT;*/
-  
-  float uR = kpR*eR + kiR * integralER  + kdR * dedER;
-  /*float uL = kpL*eL + kiL * integralEL  + kdL * dedEL;*/
-
+  int eL = targetL - currPosL , eR =currPosR - targetR;
   int dirR = 1 , dirL = 1;
   if(eR < 0){
      dirR = -1;
@@ -87,10 +76,10 @@ void turnAround(int degree , int Speed){
   if(eL < 0){
      dirL = -1;
   }
-  int mn = 0.02 * abs(eR);
+  int mn = 0.05 * abs(eR);
  
-  while((uR > mn || uR < - mn)){
-    int pwmR = (fabs(uR)) * Speed , pwmL/* = (fabs(uL)) * Speed*/;
+  while(abs(eR) > mn){
+    int pwmR = float(0.45*abs(eR))*Speed, pwmL;
     if(pwmR > Speed){
        pwmR = Speed;
       }
@@ -102,46 +91,29 @@ void turnAround(int degree , int Speed){
          dirL = -1;
       }
       if(abs(eL) < abs(eR)){
-          pwmL =  pwmR - 0.3 * pwmR;
-          pwmR =  pwmR + 0.3 * pwmR;
+          pwmL =  pwmR - 0.15 * pwmR;
+          pwmR =  pwmR + 0.15 * pwmR;
         }
       else if(abs(eL) > abs(eR)){
-        pwmL =  pwmR + 0.3 * pwmR;
-        pwmR =  pwmR - 0.3 * pwmR;
+        pwmL =  pwmR + 0.15 * pwmR;
+        pwmR =  pwmR - 0.15 * pwmR;
         }
       setMotor(dirR,pwmR,inAR,inBR,PWMR);
       setMotor(dirL,pwmL,inAL,inBL,PWML);
-      
-      prevER = eR; prevEL = eL;
-      prevT = currT ;
-      
-      Serial.print(targetR);
-      Serial.print(" ");
-      Serial.print(targetL);
-      Serial.print(" ");
-      Serial.print(posR);
-      Serial.print(" ");
-      Serial.println(posL);
-     
-      currT = micros();
-      deltaT = float(currT - prevT)/1.0e6;
       ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
         currPosR = posR;
         currPosL = posL;
         }
-    
-      eL = targetL - currPosL , eR = currPosR - targetR;
-      dedER = (eR- prevER) / deltaT /*, dedEL = (eL - prevEL) / deltaT */;
-      integralER = integralER + eR*deltaT;
-      /*integralEL = integralEL + eL*deltaT;*/
-      
-      uR = kpR*eR + kiR * integralER  + kdR * dedER;
-      /*uL = kpL*eL + kiL * integralEL  + kdL * dedEL;*/
+      eL = targetL - currPosL , eR =currPosR - targetR;
       }
-     setMotor(0,0,inAR,inBR,PWMR);
-     setMotor(0,0,inAL,inBL,PWML); 
+    setMotor(0,0,inAR,inBR,PWMR);
+    setMotor(0,0,inAL,inBL,PWML);
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE){
+         posR = 0;
+         posL = 0;
+      }
   }
-  
+
 void setMotor(int dir , int pwmValue , int in1 , int in2 , int pwm ){
   analogWrite(pwm , pwmValue);
   if(dir == 1){
