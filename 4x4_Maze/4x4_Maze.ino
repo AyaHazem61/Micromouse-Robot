@@ -54,9 +54,6 @@ void setup() {
 
   pinMode(IRR, INPUT);
   pinMode(IRL, INPUT);
-  turnAround(90, 80);
-  moveDist(30, 100);
-  moveDist(30, 100);
 }
 
 void loop() {
