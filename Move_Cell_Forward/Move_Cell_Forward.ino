@@ -95,9 +95,9 @@ void moveDist(int dist , int Speed){
         }
     int pwmR = rightDamp * errorR * Speed ;
     int pwmL = leftDamp * errorL * Speed ;
-    if(pwmR > 150) pwmR = 150;
+    if(pwmR > 255) pwmR = 255;
     else if(pwmR < 40) pwmR = 40;
-    if(pwmL > 150) pwmL = 150;
+    if(pwmL > 255) pwmL = 255;
     else if(pwmL < 40) pwmL = 40;
     setMotor(dirR , pwmR , inAR , inBR , PWMR);
     setMotor(dirL , pwmL , inAL , inBL , PWML);
