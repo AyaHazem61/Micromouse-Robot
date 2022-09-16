@@ -52,7 +52,6 @@ void setup() {
   pinMode(trigF, OUTPUT);
   pinMode(echoF, INPUT);
 
-<<<<<<< HEAD
   pinMode(IRR, INPUT_PULLUP);
   pinMode(IRL, INPUT_PULLUP);
   //________1______
@@ -66,16 +65,6 @@ void setup() {
   /*
   moveTo(1,8,100);
   */
-||||||| 4bd1bd2
-  pinMode(IRR, INPUT);
-  pinMode(IRL, INPUT);
-  turnAround(90, 80);
-  moveDist(30, 100);
-  moveDist(30, 100);
-=======
-  pinMode(IRR, INPUT);
-  pinMode(IRL, INPUT);
->>>>>>> 452e3ea518227f45b5c715c36b5b44062034bfc2
 }
 
 void loop() {
