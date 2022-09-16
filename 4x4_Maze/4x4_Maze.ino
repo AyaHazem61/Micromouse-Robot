@@ -52,18 +52,51 @@ void setup() {
   pinMode(trigF, OUTPUT);
   pinMode(echoF, INPUT);
 
-  pinMode(IRR, INPUT);
-  pinMode(IRL, INPUT);
-  turnAround(90, 80);
+  pinMode(IRR, INPUT_PULLUP);
+  pinMode(IRL, INPUT_PULLUP);
+  //________1______
+  /*turnAround(90, 80);
   moveDist(30, 100);
   moveDist(30, 100);
+  setMotor(0, 0, inAR, inBR, PWMR);
+  setMotor(0, 0, inAL, inBL, PWML);*/
+
+  //_______2______
+  /*
+  moveTo(1,8,100);
+  */
 }
 
 void loop() {
-  int end_x = 3, end_y = 4;
+  //_______3________
+  
+  /*int currDir = 1;
+  int walls = updateWalls();
+  while(walls & 15 != 15) {
+    if (walls & 1 != 0) {
+      moveTo(1 , currDir , 100);
+      currDir = 1;
+    }
+    else if (walls & 2 != 0) {
+      moveTo(2 , currDir , 100);
+      currDir = 2;
+    }
+    else if (walls & 4 != 0) {
+      moveTo(4 , currDir , 100);
+      currDir = 4;
+    }
+    else if (walls & 8 != 0) {
+      moveTo(8 , currDir , 100);
+      currDir = 8;
+      }
+    walls = updateWalls();
+    }*/
+
+  //___________4__________
+  /*int end_x = 3, end_y = 4;
   int start_x = 2, start_y = 1;
   int curr_x = start_x, curr_y = start_y;
-  while ((curr_x != end_x) && (curr_x != end_x)) {
+  while ((curr_x != end_x) && (curr_y != end_y)) {
     int min_x = -1, min_y = -1, minDist = 100, minDir , currDir = 1;
     int wall = updateWalls();
     Serial.println(wall);
@@ -169,12 +202,10 @@ void loop() {
         currDir = minDir;
       }
     }
-  }
-}
+  }*/
+ }
 
 void moveDist(int dist, int Speed) {
-
-
   int ppr = 385;
   float tireCirc = 2 * 3.5 * 3.14;
   int currPosR, currPosL;
