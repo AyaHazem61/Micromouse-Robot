@@ -64,6 +64,8 @@ void setup() {
   //_______2______
   /*
   moveTo(1,8,100);
+  setMotor(0, 0, inAR, inBR, PWMR);
+  setMotor(0, 0, inAL, inBL, PWML);
   */
 }
 
@@ -90,7 +92,10 @@ void loop() {
       currDir = 8;
       }
     walls = updateWalls();
-    }*/
+    }
+  setMotor(0, 0, inAR, inBR, PWMR);
+  setMotor(0, 0, inAL, inBL, PWML);
+  */
 
   //___________4__________
   /*int end_x = 3, end_y = 4;
@@ -202,7 +207,10 @@ void loop() {
         currDir = minDir;
       }
     }
-  }*/
+  }
+  setMotor(0, 0, inAR, inBR, PWMR);
+  setMotor(0, 0, inAL, inBL, PWML);
+  */
  }
 
 void moveDist(int dist, int Speed) {
