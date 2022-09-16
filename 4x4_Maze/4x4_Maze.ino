@@ -270,7 +270,8 @@ void moveDist(int dist, int Speed) {
     }
     eL = targetL - currPosL, eR = currPosR - targetR;
   }
-
+  setMotor(0, 0, inAR, inBR, PWMR);
+  setMotor(0, 0, inAL, inBL, PWML);
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
     posR = 0;
     posL = 0;
