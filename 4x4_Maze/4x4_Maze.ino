@@ -31,9 +31,25 @@ int target;
 int cellLength = 30;
 int dirs[] = { 1, 2, 4, 8 };
 int currDir = 1;
- int nextDir;
+int nextDir;
+int X,Y;
+ 
+
+
+struct coord {
+  int x;
+  int y;
+};
+
+coord start = { 0, 0 };
+coord end = { 2, 2};
+coord curr = start;
+coord minCoord;
+int minDist = 100;
+int nextDist;
 
 void setup() {
+  Serial.begin(9600);
   pinMode(encAR, INPUT);
   pinMode(encBR, INPUT);
   pinMode(inAR, OUTPUT);
@@ -57,44 +73,73 @@ void setup() {
 
   pinMode(IRR, INPUT);
   pinMode(IRL, INPUT);
-
-  //________1______
-
-
-  // turnAround(90, 80);
-  // moveDist(30, 100);
-  // moveDist(30, 100);
-  // setMotor(0, 0, inAR, inBR, PWMR);
-  // setMotor(0, 0, inAL, inBL, PWML);
-
-
-  //_______2______
-  // moveTo(1,8,100);
-  // moveTo(8,8,100);
-  setMotor(0, 0, inAR, inBR, PWMR);
-  setMotor(0, 0, inAL, inBL, PWML);
+  
 }
 
 void loop() {
-  //_______3________
-  if (readUltrasonicF() > 20) {
-    moveTo(currDir,currDir,100);
-  } else if (readUltrasonicL() > 20) {
-    nextDir = currDir >> 1;
-    if(nextDir <= 0) nextDir = 8;
-    else if(nextDir >= 16) nextDir = 1;
+  while (curr.x != end.x || curr.y != end.y) {
+    if (readUltrasonicF() > 20) {
+      coord next ;
+      next = calcCoord(nextDir,curr.x,curr.y);
+      nextDist = calcDist(next.x , next.y);
+      if(nextDist < minDist){
+        nextDir =  currDir;
+        
+        X = next.x; Y = next.y;
+        minDist = nextDist;
+        minCoord.x = X;
+        minCoord.y = Y;
+      }
+    } 
+    if (readUltrasonicL() > 20) {
+      coord next ;
+      next = calcCoord(nextDir,curr.x,curr.y);
+      nextDist = calcDist(next.x , next.y);
+      if(nextDist < minDist){
+        nextDir = currDir >> 1;
+        if (nextDir <= 0) nextDir = 8;
+        else if (nextDir >= 16) nextDir = 1;
+        minDist = nextDist;
+        
+        X = next.x; Y = next.y;
+        minCoord.x = X;
+        minCoord.y = Y;
+      }
+    }
+    if (readUltrasonicR() > 20) {
+      coord next ;
+      next = calcCoord(nextDir,curr.x,curr.y);
+      nextDist = calcDist(next.x , next.y);
+      if(nextDist < minDist){
+        nextDir = currDir << 1;
+        if (nextDir <= 0) nextDir = 8;
+        else if (nextDir >= 16) nextDir = 1;
+        
+        X = next.x; Y = next.y;
+        minDist = nextDist;
+        minCoord.x = X;
+        minCoord.y = Y;
+      }
+    }
+    Serial.println("X : " + String(minCoord.x) + " ,Y : " + String(minCoord.y));
+    Serial.println("minDist" + String(minDist));
     moveTo(nextDir,currDir,100);
-  } else if (readUltrasonicR() > 20) {
-    nextDir = currDir << 1;
-    if(nextDir <= 0) nextDir = 8;
-    else if(nextDir >= 16) nextDir = 1;
-    moveTo(nextDir,currDir,100);
+    currDir = nextDir;
+    X = minCoord.x;
+    Y = minCoord.y;
+    curr.x = X;
+    curr.y = Y;
+    delay(1000);
+    
   }
-  delay(100);
+  setMotor(0, 0, inAR, inBR, PWMR);
+  setMotor(0, 0, inAL, inBL, PWML);
 
-  
+
+
+
   // if (readUltrasonicF() > 20) {
-  //    moveDist(cellLength, 100);
+  //   moveDist(cellLength, 100);
   // }
   // else if (readUltrasonicL() > 20) {
   //   moveDist(cellLength, 100);
@@ -108,117 +153,175 @@ void loop() {
 
 
   //___________4__________
-  // int end_x = 3, end_y = 5;
-  // int start_x = 1, start_y = 3;
-  // int curr_x = start_x, curr_y = start_y;
-  // while ((curr_x != end_x) && (curr_y != end_y)) {
-  //   int min_x = -1, min_y = -1, minDist = 100, minDir , currDir = 1;
-  //   if (readUlrasonicF() > 20) {
-  //     int distance = calcDist(curr_x, curr_y + 1);
+  // coord end = {3, 5};
+  // coord strat = {1, 3};
+  // coord currCoord;
+  // currCoord.x = strat.x;
+  // currCoord.y = strat.y;
+  // int currDir = 1;
+  //  while ((currCoord.x != end.x) && (currCoord.y != end.y)) {
+  //   coord minCoord = { -1, -1 };
+  //   int minDist = 100, minDir, nextDir;
+  //   if (readUltrasonicF() > 20) {
+  //     nextDir = currDir;
+  //     coord nextCoord = calcCoord(currDir, nextDir, currCoord);
+  //     int distance = calcDist(nextCoord.x, nextCoord.y);
   //     if (distance < minDist) {
-  //       if (isValid(curr_x, curr_y + 1)) {
-  //         min_x = curr_x;
-  //         min_y = curr_y + 1;
+  //       if (isValid(nextCoord.x, nextCoord.y)) {
+  //         minCoord.x = nextCoord.x;
+  //         minCoord.y = nextCoord.y;
   //         minDist = distance;
-  //         minDir = 1;
+  //         minDir = nextDir;
   //       }
   //     }
   //   }
-  //   if (readUlrasonicL() > 20) {
-  //     int distance = calcDist(curr_x + 1, curr_y);
+  //   if (readUltrasonicL() > 20) {
+  //     nextDir = currDir >> 1;
+  //     if (nextDir <= 0) nextDir = 8;
+  //     else if (nextDir >= 16) nextDir = 1;
+  //     coord nextCoord = calcCoord(currDir, nextDir, currCoord);
+  //     int distance = calcDist(nextCoord.x, nextCoord.y);
   //     if (distance < minDist) {
-  //       if (isValid(curr_x + 1, curr_y)) {
-  //         min_x = curr_x + 1;
-  //         min_y = curr_y;
+  //       if (isValid(nextCoord.x, nextCoord.y)) {
+  //         minCoord.x = nextCoord.x;
+  //         minCoord.y = nextCoord.y;
   //         minDist = distance;
-  //         minDir = 8;
+  //         minDir = nextDir;
   //       }
   //     }
   //   }
-  //   if (readUlrasonicR() > 20) {
-  //     int distance = calcDist(curr_x - 1, curr_y);
+  //   if (readUltrasonicR() > 20) {
+  //     nextDir = currDir << 1;
+  //     if (nextDir <= 0) nextDir = 8;
+  //     else if (nextDir >= 16) nextDir = 1;
+  //     coord nextCoord = calcCoord(currDir, nextDir, currCoord);
+  //     int distance = calcDist(nextCoord.x, nextCoord.y);
   //     if (distance < minDist) {
-  //       if (isValid(curr_x - 1, curr_y)) {
-  //         min_x = curr_x - 1;
-  //         min_y = curr_y;
+  //       if (isValid(nextCoord.x, nextCoord.y)) {
+  //         minCoord.x = nextCoord.x;
+  //         minCoord.y = nextCoord.y;
   //         minDist = distance;
-  //         minDir = 4;
+  //         minDir = nextDir;
   //       }
   //     }
   //   }
   //   if (true) {
-  //     int distance = calcDist(curr_x, curr_y - 1);
+  //     nextDir = currDir >> 1;
+  //     if (nextDir <= 0) nextDir = 8;
+  //     else if (nextDir >= 16) nextDir = 1;
+  //     nextDir = nextDir >> 1;
+  //     if (nextDir <= 0) nextDir = 8;
+  //     else if (nextDir >= 16) nextDir = 1;
+  //     coord nextCoord = calcCoord(currDir, nextDir, currCoord);
+  //     int distance = calcDist(nextCoord.x, nextCoord.y);
   //     if (distance < minDist) {
-  //       if (isValid(curr_x, curr_y -1)) {
-  //         min_x = curr_x;
-  //         min_y = curr_y - 1;
+  //       if (isValid(nextCoord.x, nextCoord.y)) {
+  //         minCoord.x = nextCoord.x;
+  //         minCoord.y = nextCoord.y;
   //         minDist = distance;
-  //         minDir = 2;
+  //         minDir = nextDir;
   //       }
   //     }
   //   }
-  //   if (isValid(min_x, min_y)) {
+  //    if (isValid(minCoord.x, minCoord.y)) {
   //     moveTo(minDir, currDir, 100);
-  //     curr_x = min_x;
-  //     curr_y = min_y;
+  //     currCoord.x = minCoord.x;
+  //     currCoord.y = minCoord.y;
   //     currDir = minDir;
+  //    }
+  //   while (minCoord.x != -1 && minCoord.y != -1) {
+  //     if (readUltrasonicF() > 20) {
+  //       nextDir = currDir;
+  //       coord nextCoord = calcCoord(currDir, nextDir, currCoord);
+  //       int distance = calcDist(nextCoord.x, nextCoord.y);
+  //       if (distance < minDist) {
+  //         if (isValid(nextCoord.x, nextCoord.y)) {
+  //           minCoord.x = nextCoord.x;
+  //           minCoord.y = nextCoord.y;
+  //           minDist = distance;
+  //           minDir = nextDir;
+  //         }
+  //       }
+  //     }
+  //     if (readUltrasonicL() > 20) {
+  //       nextDir = currDir >> 1;
+  //       if (nextDir <= 0) nextDir = 8;
+  //       else if (nextDir >= 16) nextDir = 1;
+  //       coord nextCoord = calcCoord(currDir, nextDir, currCoord);
+  //       int distance = calcDist(nextCoord.x, nextCoord.y);
+  //       if (distance < minDist) {
+  //         if (isValid(nextCoord.x, nextCoord.y)) {
+  //           minCoord.x = nextCoord.x;
+  //           minCoord.y = nextCoord.y;
+  //           minDist = distance;
+  //           minDir = nextDir;
+  //         }
+  //       }
+  //     }
+  //     if (readUltrasonicR() > 20) {
+  //       nextDir = currDir << 1;
+  //       if (nextDir <= 0) nextDir = 8;
+  //       else if (nextDir >= 16) nextDir = 1;
+  //       coord nextCoord = calcCoord(currDir, nextDir, currCoord);
+  //       int distance = calcDist(nextCoord.x, nextCoord.y);
+  //       if (distance < minDist) {
+  //         if (isValid(nextCoord.x, nextCoord.y)) {
+  //           minCoord.x = nextCoord.x;
+  //           minCoord.y = nextCoord.y;
+  //           minDist = distance;
+  //           minDir = nextDir;
+  //         }
+  //       }
+  //     }
+  //   if(true) {
+  //     nextDir = currDir >> 1;
+  //     if (nextDir <= 0) nextDir = 8;
+  //     else if (nextDir >= 16) nextDir = 1;
+  //     nextDir = nextDir >> 1;
+  //     if (nextDir <= 0) nextDir = 8;
+  //     else if (nextDir >= 16) nextDir = 1;
+  //     coord nextCoord = calcCoord(currDir, nextDir, currCoord);
+  //     int distance = calcDist(nextCoord.x, nextCoord.y);
+  //     if (distance < minDist) {
+  //       if (isValid(nextCoord.x, nextCoord.y)) {
+  //         minCoord.x = nextCoord.x;
+  //         minCoord.y = nextCoord.y;
+  //         minDist = distance;
+  //         minDir = nextDir;
+  //       }
+  //     }
   //   }
-  //   while (min_x != -1 && min_y != -1) {
-  //     int wall = updateWalls();
-  //     Serial.println(wall);
-  //     min_x = -1;
-  //     min_y = -1;
-  //     minDist = 100;
-  //     minDir;
-  //     int walls = updateWalls();
-  //     if (walls & 1 != 0) {
-  //       int distance = calcDist(curr_x, curr_y + 1);
-  //       if (distance < minDist) {
-  //         min_x = curr_x;
-  //         min_y = curr_y + 1;
-  //         minDist = distance;
-  //         minDir = 1;
-  //       }
-  //     }
-  //     if (walls & 2 != 0) {
-  //       int distance = calcDist(curr_x, curr_y - 1);
-  //       if (distance < minDist) {
-  //         min_x = curr_x;
-  //         min_y = curr_y - 1;
-  //         minDist = distance;
-  //         minDir = 2;
-  //       }
-  //     }
-  //     if (walls & 4 != 0) {
-  //       int distance = calcDist(curr_x - 1, curr_y);
-  //       if (distance < minDist) {
-  //         min_x = curr_x - 1;
-  //         min_y = curr_y;
-  //         minDist = distance;
-  //         minDir = 4;
-  //       }
-  //     }
-  //     if (walls & 8 != 0) {
-  //       int distance = calcDist(curr_x + 1, curr_y);
-  //       if (distance < minDist) {
-  //         min_x = curr_x + 1;
-  //         min_y = curr_y;
-  //         minDist = distance;
-  //         minDir = 8;
-  //       }
-  //     }
-  //     if (isValid(min_x, min_y)) {
+  //      if (isValid(minCoord.x, minCoord.y)) {
   //       moveTo(minDir, currDir, 100);
-  //       curr_x = min_x;
-  //       curr_y = min_y;
+  //       currCoord.x = minCoord.x;
+  //       currCoord.y = minCoord.y;
   //       currDir = minDir;
-  //     }
-  //   }
-  // }
-  // setMotor(0, 0, inAR, inBR, PWMR);
-  // setMotor(0, 0, inAL, inBL, PWML);
+  //      }
+  //    }
+  //  }
+ 
 }
 
+coord calcCoord(int nextDir, int x_, int y_) {
+  coord nextCoord;
+  nextCoord.y = y_;
+  nextCoord.x = x_;
+      switch (nextDir) {
+        case 1:
+          nextCoord.y = y_ + 1;
+          break;
+        case 2:
+          nextCoord.x = x_ + 1;
+          break;
+        case 4:
+          nextCoord.y = y_ - 1;
+          break;
+        case 8:
+          nextCoord.x = x_ - 1;
+          break;
+      }
+  return nextCoord;
+}
 void moveDist(int dist, int Speed) {
   int ppr = 385;
   float tireCirc = 2 * 3.5 * 3.14;
@@ -235,19 +338,20 @@ void moveDist(int dist, int Speed) {
   if (eL < 0) dirL = -1;
   int mn = 0.02 * abs(eR);
   while (abs(eR) > mn) {
-    if (readUltrasonicF() < 10) {
-      setMotor(0, 0, inAR, inBR, PWMR);
-      setMotor(0, 0, inAL, inBL, PWML);
-      break;
-    }
+    // if (readUltrasonicF() < 10) {
+    //   setMotor(0, 0, inAR, inBR, PWMR);
+    //   setMotor(0, 0, inAL, inBL, PWML);
+    //   break;
+    // }
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+      // int SPEED = (int)0.8 * Speed;
       while (analogRead(IRL) < 100) {
-        setMotor(-1, (int)0.8 * Speed, inAR, inBR, PWMR);
-        setMotor(1, (int)0.8 * Speed, inAL, inBL, PWML);
+        setMotor(-1, 80, inAR, inBR, PWMR);
+        setMotor(1, 80, inAL, inBL, PWML);
       }
       while (analogRead(IRR) < 100) {
-        setMotor(1, (int)0.8 * Speed, inAR, inBR, PWMR);
-        setMotor(-1,(int)0.8 * Speed, inAL, inBL, PWML);
+        setMotor(1, 80, inAR, inBR, PWMR);
+        setMotor(-1, 80, inAL, inBL, PWML);
       }
     }
     int pwmR = float(0.45 * abs(eR)) * Speed, pwmL;
@@ -353,12 +457,12 @@ void turnAround(int degree, int Speed) {
     if (pwmR > Speed) {
       pwmR = Speed;
     }
-    if (eR < 0) {
-      break;
-    }
-    if (eL < 0) {
-      break;
-    }
+    // if (eR < 0) {
+    //   break;
+    // }
+    // if (eL < 0) {
+    //   break;
+    // }
     if (abs(eL) < abs(eR)) {
       pwmL = pwmR - 0.15 * pwmR;
       pwmR = pwmR + 0.15 * pwmR;
@@ -421,20 +525,20 @@ int updateWalls() {
   int distance;
   distance = readUltrasonicF();
   if (distance < 20) {
-    if (newWalls & 1 != 0) {
+    if (newWalls & 1) {
       wallsToAdd += 1;
     }
   }
   distance = readUltrasonicL();
   if (distance < 20) {
-    if (newWalls & 8 != 0) {
+    if (newWalls & 8) {
       wallsToAdd += 8;
     }
   }
   distance = readUltrasonicR();
   if (distance < 20) {
-    if (newWalls & 4 != 0) {
-      wallsToAdd += 4;
+    if (newWalls & 2) {
+      wallsToAdd += 2;
     }
   }
   newWalls -= wallsToAdd;
@@ -443,7 +547,7 @@ int updateWalls() {
 
 int calcDist(int posX, int posY) {
   int distance = 0;
-  distance = abs(5 - posX) + abs(5 - posY);
+  distance = abs(2 - posX) + abs(2 - posY);
   return distance;
 }
 void moveTo(int heading, int currHeading, int Speed) {
@@ -454,85 +558,73 @@ void moveTo(int heading, int currHeading, int Speed) {
           moveDist(cellLength, Speed);
           break;
         case 2:
-          moveDist(cellLength, Speed);
           turnAround(-90, Speed);
+          moveDist(cellLength, Speed);
           break;
         case 4:
-          moveDist(cellLength, Speed);
           turnAround(-180, Speed);
+          moveDist(cellLength, Speed);
           break;
         case 8:
-          moveDist(cellLength, Speed);
           turnAround(90, Speed);
-          break;
+          moveDist(cellLength, Speed);
           break;
       }
       break;
     case 2: /*N >> S*/
       switch (currHeading) {
         case 1:
-          moveDist(cellLength, Speed);
           turnAround(90, Speed);
-
+          moveDist(cellLength, Speed);
           break;
         case 2:
           moveDist(cellLength, Speed);
           break;
         case 4:
-          moveDist(cellLength, Speed);
           turnAround(-90, Speed);
-
+          moveDist(cellLength, Speed);
           break;
         case 8:
-          moveDist(cellLength, Speed);
           turnAround(180, Speed);
-
-          break;
+          moveDist(cellLength, Speed);
           break;
       }
       break;
     case 4:
       switch (currHeading) {
         case 1:
-          moveDist(cellLength, Speed);
           turnAround(180, Speed);
-
+          moveDist(cellLength, Speed);
           break;
         case 2:
-          moveDist(cellLength, Speed);
           turnAround(90, Speed);
-
+          moveDist(cellLength, Speed);
           break;
         case 4:
           moveDist(cellLength, Speed);
           break;
         case 8:
-          moveDist(cellLength, Speed);
           turnAround(-90, Speed);
-          break;
+          moveDist(cellLength, Speed);
           break;
       }
       break;
     case 8:
       switch (currHeading) {
         case 1:
-          moveDist(cellLength, Speed);
           turnAround(-90, Speed);
-
+          moveDist(cellLength, Speed);
           break;
         case 2:
-          moveDist(cellLength, Speed);
           turnAround(180, Speed);
-
+          moveDist(cellLength, Speed);
           break;
         case 4:
-          moveDist(cellLength, Speed);
           turnAround(90, Speed);
-
+          moveDist(cellLength, Speed);
           break;
         case 8:
           moveDist(cellLength, Speed);
-          break;
           break;
       }
       break;
