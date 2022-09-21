@@ -23,6 +23,9 @@
 #define echoL A4
 #define echoF A2
 
+int W = 2;
+int L = 4;
+
 volatile int posR = 0, posL = 0;
 long prevT = 0;
 float prevER = 0, prevEL = 0;
@@ -30,19 +33,29 @@ float integralER = 0, integralEL = 0;
 int target;
 int cellLength = 30;
 int dirs[] = { 1, 2, 4, 8 };
-int currDir = 1;
+int currDir = 1, minDir;
 int nextDir;
-int X,Y;
- 
+int X, Y;
 
+struct cell {
+  int distance;
+  /* binary number represent each cell's walls  
+      in directions W-S-E-N
+      1 ==>> no wall
+      0 ==>> wall
+  */
+  int walls;
+};
+
+cell maze[5][5];
 
 struct coord {
   int x;
   int y;
 };
 
-coord start = { 0, 0 };
-coord end = { 2, 2};
+coord start = { 1, 1 };
+coord end = { 2, 4 };
 coord curr = start;
 coord minCoord;
 int minDist = 100;
@@ -73,88 +86,103 @@ void setup() {
 
   pinMode(IRR, INPUT);
   pinMode(IRL, INPUT);
-  
+  begin_();
+  delay(100);
 }
 
 void loop() {
   while (curr.x != end.x || curr.y != end.y) {
-    if (readUltrasonicF() > 20) {
-      coord next ;
-      next = calcCoord(nextDir,curr.x,curr.y);
-      nextDist = calcDist(next.x , next.y);
-      if(nextDist < minDist){
-        nextDir =  currDir;
-        
-        X = next.x; Y = next.y;
-        minDist = nextDist;
-        minCoord.x = X;
-        minCoord.y = Y;
-      }
-    } 
-    if (readUltrasonicL() > 20) {
-      coord next ;
-      next = calcCoord(nextDir,curr.x,curr.y);
-      nextDist = calcDist(next.x , next.y);
-      if(nextDist < minDist){
-        nextDir = currDir >> 1;
-        if (nextDir <= 0) nextDir = 8;
-        else if (nextDir >= 16) nextDir = 1;
-        minDist = nextDist;
-        
-        X = next.x; Y = next.y;
-        minCoord.x = X;
-        minCoord.y = Y;
+    delay(1000);
+    updateWalls(curr);
+    int WALLS = maze[curr.x][curr.y].walls;
+    if (WALLS & 1) {
+      coord next;
+      next = calcCoord(1, curr.x, curr.y);
+      if (isValid(next.x, next.y)) {
+        if (maze[next.x][next.y].distance < minDist) {
+          X = next.x;
+          Y = next.y;
+          minDist = maze[next.x][next.y].distance;
+          minDir = 1;
+          minCoord.x = X;
+          minCoord.y = Y;
+        }
       }
     }
-    if (readUltrasonicR() > 20) {
-      coord next ;
-      next = calcCoord(nextDir,curr.x,curr.y);
-      nextDist = calcDist(next.x , next.y);
-      if(nextDist < minDist){
-        nextDir = currDir << 1;
-        if (nextDir <= 0) nextDir = 8;
-        else if (nextDir >= 16) nextDir = 1;
-        
-        X = next.x; Y = next.y;
-        minDist = nextDist;
-        minCoord.x = X;
-        minCoord.y = Y;
+    if (WALLS & 8) {
+      coord next;
+      next = calcCoord(8, curr.x, curr.y);
+      if (isValid(next.x, next.y)) {
+        if (maze[next.x][next.y].distance < minDist) {
+          minDist = maze[next.x][next.y].distance;
+          minDir = 8;
+          X = next.x;
+          Y = next.y;
+          minCoord.x = X;
+          minCoord.y = Y;
+        }
       }
     }
-    Serial.println("X : " + String(minCoord.x) + " ,Y : " + String(minCoord.y));
-    Serial.println("minDist" + String(minDist));
-    moveTo(nextDir,currDir,100);
-    currDir = nextDir;
+    if (WALLS & 2) {
+      coord next;
+      next = calcCoord(2, curr.x, curr.y);
+      if (isValid(next.x, next.y)) {
+        if (maze[next.x][next.y].distance < minDist) {
+          X = next.x;
+          Y = next.y;
+          minDist = maze[next.x][next.y].distance;
+          minCoord.x = X;
+          minCoord.y = Y;
+          minDir = 2;
+        }
+      }
+    }
+    moveTo(minDir, currDir, 75);
+    currDir = minDir;
     X = minCoord.x;
     Y = minCoord.y;
     curr.x = X;
     curr.y = Y;
-    delay(1000);
-    
+    Serial.println("X : " + String(curr.x) + " ,Y : " + String(curr.y));
+    Serial.println("minDist: " + String(minDist));
   }
   setMotor(0, 0, inAR, inBR, PWMR);
   setMotor(0, 0, inAL, inBL, PWML);
- 
 }
 
+/*instantiates a maze with no walls except boundries
+   instantiates each cell's distance from the center
+*/
+void begin_() {
+  for (int i = 1; i < 5; i++) {
+    for (int j = 1; j < 5; j++) {
+      maze[i][j].distance = calcDist(i, j);
+      maze[i][j].walls = 15;
+    }
+  }
+}
+
+
 coord calcCoord(int nextDir, int x_, int y_) {
-  coord nextCoord;
-  nextCoord.y = y_;
-  nextCoord.x = x_;
-      switch (nextDir) {
-        case 1:
-          nextCoord.y = y_ + 1;
-          break;
-        case 2:
-          nextCoord.x = x_ + 1;
-          break;
-        case 4:
-          nextCoord.y = y_ - 1;
-          break;
-        case 8:
-          nextCoord.x = x_ - 1;
-          break;
-      }
+  coord nextCoord = { 0, 0 };
+  switch (nextDir) {
+    case 1:
+      nextCoord.x = x_;
+      nextCoord.y = y_ + 1;
+      break;
+    case 2:
+      nextCoord.x = x_ + 1;
+      nextCoord.y = y_;
+      break;
+    case 4:
+      nextCoord.x = x_;
+      nextCoord.y = y_ - 1;
+      break;
+    case 8:
+      nextCoord.x = x_ - 1;
+      nextCoord.y = y_;
+      break;
+  }
   return nextCoord;
 }
 void moveDist(int dist, int Speed) {
@@ -172,7 +200,11 @@ void moveDist(int dist, int Speed) {
   if (eR < 0) dirR = -1;
   if (eL < 0) dirL = -1;
   int mn = 0.02 * abs(eR);
+  int prevRightDist = readUltrasonicR();
+  int prevLeftDist = readUltrasonicL();
+  // int dampR = 1, dampL = 1 , incre = 0.5;
   while (abs(eR) > mn) {
+
     if (readUltrasonicF() < 10) {
       setMotor(0, 0, inAR, inBR, PWMR);
       setMotor(0, 0, inAL, inBL, PWML);
@@ -206,6 +238,25 @@ void moveDist(int dist, int Speed) {
       pwmL = pwmR + 0.15 * pwmR;
       pwmR = pwmR - 0.15 * pwmR;
     }
+    if (readUltrasonicL() < 15) {
+      if (readUltrasonicL() > prevLeftDist) {
+        pwmL = pwmR - 0.15 * pwmR;
+        pwmR = pwmR + 0.15 * pwmR;
+      } else if (readUltrasonicL() < prevLeftDist) {
+        pwmL = pwmR + 0.15 * pwmR;
+        pwmR = pwmR - 0.15 * pwmR;
+      }
+    }
+    if (readUltrasonicR() < 15) {
+      if (readUltrasonicL() < prevLeftDist) {
+        pwmL = pwmR - 0.15 * pwmR;
+        pwmR = pwmR + 0.15 * pwmR;
+      } else if (readUltrasonicL() > prevLeftDist) {
+        pwmL = pwmR + 0.15 * pwmR;
+        pwmR = pwmR - 0.15 * pwmR;
+      }
+    }
+
     setMotor(dirR, pwmR, inAR, inBR, PWMR);
     setMotor(dirL, pwmL, inAL, inBL, PWML);
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
@@ -213,6 +264,13 @@ void moveDist(int dist, int Speed) {
       currPosL = posL;
     }
     eL = targetL - currPosL, eR = currPosR - targetR;
+    //  Serial.print(-targetR);
+    //   Serial.print(" ");
+    //   Serial.print(targetL);
+    //   Serial.print(" ");
+    //   Serial.print(-posR);
+    //   Serial.print(" ");
+    //   Serial.println(posL);
   }
   setMotor(0, 0, inAR, inBR, PWMR);
   setMotor(0, 0, inAL, inBL, PWML);
@@ -223,7 +281,9 @@ void moveDist(int dist, int Speed) {
 }
 
 bool isValid(int x, int y) {
-  return ((x > 4) || (x < 0) || (y > 4) || (y < 0)) ? false : true;
+  bool IsValid = true;
+  if((x > W) || (x <= 0) || (y > L) || (y <= 0)) IsValid = false;
+  return IsValid;
 }
 void setMotor(int dir, int pwmValue, int in1, int in2, int pwm) {
   analogWrite(pwm, pwmValue);
@@ -291,12 +351,12 @@ void turnAround(int degree, int Speed) {
     if (pwmR > Speed) {
       pwmR = Speed;
     }
-    // if (eR < 0) {
-    //   break;
-    // }
-    // if (eL < 0) {
-    //   break;
-    // }
+    if (eR < 0) {
+      dirR = -1;
+    }
+    if (eL < 0) {
+      dirL = -1;
+    }
     if (abs(eL) < abs(eR)) {
       pwmL = pwmR - 0.15 * pwmR;
       pwmR = pwmR + 0.15 * pwmR;
@@ -353,35 +413,56 @@ int readUltrasonicF() {
   int disC = distant * 0.5 * 0.034;
   return disC;
 }
-int updateWalls() {
-  int newWalls = 15;
+void updateWalls(coord currCoord) {
+  int wallDir;
+  int newWalls = maze[currCoord.x][currCoord.y].walls;
   int wallsToAdd = 0;
   int distance;
+
+
   distance = readUltrasonicF();
+
   if (distance < 20) {
-    if (newWalls & 1) {
-      wallsToAdd += 1;
+    wallDir = currDir;
+    if (newWalls & wallDir) {
+      wallsToAdd += wallDir;
     }
   }
+
+
   distance = readUltrasonicL();
+
   if (distance < 20) {
-    if (newWalls & 8) {
-      wallsToAdd += 8;
+    wallDir = currDir >> 1;
+
+    if (wallDir < 1) wallDir = 8;
+    else if (wallDir > 8) wallDir = 1;
+
+    if (newWalls & wallDir) {
+      wallsToAdd += wallDir;
     }
   }
+
+
   distance = readUltrasonicR();
+
   if (distance < 20) {
-    if (newWalls & 2) {
-      wallsToAdd += 2;
+    wallDir = currDir << 1;
+
+    if (wallDir < 1) wallDir = 8;
+    else if (wallDir > 8) wallDir = 1;
+
+    if (newWalls & wallDir) {
+      wallsToAdd += wallDir;
     }
   }
   newWalls -= wallsToAdd;
-  return newWalls;
+  maze[currCoord.x][currCoord.y].walls = newWalls;
 }
 
 int calcDist(int posX, int posY) {
-  int distance = 0;
-  distance = abs(2 - posX) + abs(2 - posY);
+  int distance;
+  distance = abs(W - posX) + abs(L - posY);
   return distance;
 }
 void moveTo(int heading, int currHeading, int Speed) {
